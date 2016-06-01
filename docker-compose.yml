@@ -1,0 +1,98 @@
+version: '2'
+
+services:
+  zookeeper-leader:
+    container_name: zkprl
+    hostname: zkprl
+    image: p4km9y/zookeeper
+  zookeeper-scalable-follower:
+    image: p4km9y/zookeeper
+    depends_on:
+      - zookeeper-leader
+    environment:
+      - ZK_LEADER=zkprl
+      - ZK_SLEEP=3
+    entrypoint:
+      - /wait-for-it.sh
+      - -t
+      - "100"
+      - -s
+      - zkprl:2181
+      - --
+      - /opt/zookeeper/bin/zk-init.sh
+  zookeeper-static-follower:
+    container_name: zkprf
+    hostname: zkprf
+    image: p4km9y/zookeeper
+    depends_on:
+      - zookeeper-leader
+    environment:
+      - ZK_LEADER=zkprl
+      - ZK_SLEEP=5
+    entrypoint:
+      - /wait-for-it.sh
+      - -t
+      - "100"
+      - -s
+      - zkprl:2181
+      - --
+      - /opt/zookeeper/bin/zk-init.sh
+
+  kafka-member-1:
+    container_name: kfkm1
+    hostname: kfkm1
+    image: p4km9y/kafka
+    depends_on:
+      - zookeeper-leader
+    entrypoint:
+      - /wait-for-it.sh
+      - -t
+      - "100"
+      - -s
+      - zkprl:2181
+      - --
+      - /opt/kafka/bin/kafka-server-start.sh
+      - /opt/kafka/config/server.properties
+      - --override
+      - zookeeper.connect=zkprl:2181,zkprf:2181
+      - --override
+      - broker.id=1
+  kafka-member-2:
+    container_name: kfkm2
+    hostname: kfkm2
+    image: p4km9y/kafka
+    depends_on:
+      - zookeeper-leader
+    entrypoint:
+      - /wait-for-it.sh
+      - -t
+      - "100"
+      - -s
+      - zkprl:2181
+      - --
+      - /opt/kafka/bin/kafka-server-start.sh
+      - /opt/kafka/config/server.properties
+      - --override
+      - zookeeper.connect=zkprl:2181,zkprf:2181
+      - --override
+      - broker.id=2
+  kafka-member-3:
+    container_name: kfkm3
+    hostname: kfkm3
+    image: p4km9y/kafka
+    depends_on:
+      - zookeeper-leader
+    entrypoint:
+      - /wait-for-it.sh
+      - -t
+      - "100"
+      - -s
+      - zkprl:2181
+      - --
+      - /opt/kafka/bin/kafka-server-start.sh
+      - /opt/kafka/config/server.properties
+      - --override
+      - zookeeper.connect=zkprl:2181,zkprf:2181
+      - --override
+      - broker.id=3
+
