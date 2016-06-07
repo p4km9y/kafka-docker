@@ -11,7 +11,7 @@ services:
       - zookeeper-leader
     environment:
       - ZK_LEADER=zkprl
-      - ZK_SLEEP=3
+      - ZK_SLEEP=4
     entrypoint:
       - /wait-for-it.sh
       - -t
@@ -28,7 +28,7 @@ services:
       - zookeeper-leader
     environment:
       - ZK_LEADER=zkprl
-      - ZK_SLEEP=5
+      - ZK_SLEEP=8
     entrypoint:
       - /wait-for-it.sh
       - -t
@@ -96,3 +96,16 @@ services:
       - --override
       - broker.id=3
 
+  mosquitto:
+    image: p4km9y/mosquitto
+    hostname: mosquitto
+
+  bridge:
+    image: p4km9y/karaf
+    hostname: bridge
+    depends_on: 
+      - kafka-member-1
+      - kafka-member-2
+      - kafka-member-3
+      - mosquitto
+    
