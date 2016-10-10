@@ -99,6 +99,8 @@ services:
   mosquitto:
     image: p4km9y/mosquitto
     hostname: mosquitto
+    ports:
+      - "1883:1883"
 
   bridge:
     image: p4km9y/karaf
