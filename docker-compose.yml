@@ -1,113 +1,61 @@
-version: '2'
+version: "3"
+
+volumes:
+  zk-leader-data:
+  zk-leader-cfg:
+  zk-p1-data:
+  zk-p1-cfg:
+  zk-p2-data:
+  zk-p2-cfg:
+  kafka-data:
 
 services:
-  zookeeper-leader:
-    container_name: zkprl
-    hostname: zkprl
-    image: p4km9y/zookeeper
-  zookeeper-scalable-follower:
-    image: p4km9y/zookeeper
-    depends_on:
-      - zookeeper-leader
+  zk-leader:
+    image: p4km9y/zookeeper:3.5.3-beta
+    volumes:
+      - zk-leader-data:/opt/zookeeper/data
+      - zk-leader-cfg:/opt/zookeeper/conf
+    deploy:
+      placement:
+        constraints:
+          - node.labels.camp.xit.docker.node.number == 1
+  zk-p1:
+    image: p4km9y/zookeeper:3.5.3-beta
     environment:
-      - ZK_LEADER=zkprl
-      - ZK_SLEEP=4
-    entrypoint:
-      - /wait-for-it.sh
-      - -t
-      - "100"
-      - -s
-      - zkprl:2181
-      - --
-      - /opt/zookeeper/bin/zk-init.sh
-  zookeeper-static-follower:
-    container_name: zkprf
-    hostname: zkprf
-    image: p4km9y/zookeeper
-    depends_on:
-      - zookeeper-leader
+      - ZK_LEADER=zk-leader
+      - ZK_SLEEP=10
+    volumes:
+      - zk-p1-data:/opt/zookeeper/data
+      - zk-p1-cfg:/opt/zookeeper/conf
+    deploy:
+      placement:
+        constraints:
+          - node.labels.camp.xit.docker.node.number == 2
+  zk-p2:
+    image: p4km9y/zookeeper:3.5.3-beta
     environment:
-      - ZK_LEADER=zkprl
-      - ZK_SLEEP=8
-    entrypoint:
-      - /wait-for-it.sh
-      - -t
-      - "100"
-      - -s
-      - zkprl:2181
-      - --
-      - /opt/zookeeper/bin/zk-init.sh
+      - ZK_LEADER=zk-leader
+      - ZK_SLEEP=30
+    volumes:
+      - zk-p2-data:/opt/zookeeper/data
+      - zk-p2-cfg:/opt/zookeeper/conf
+    deploy:
+      placement:
+        constraints:
+          - node.labels.camp.xit.docker.node.number == 2
 
-  kafka-member-1:
-    container_name: kfkm1
-    hostname: kfkm1
-    image: p4km9y/kafka
-    depends_on:
-      - zookeeper-leader
-    entrypoint:
-      - /wait-for-it.sh
-      - -t
-      - "100"
-      - -s
-      - zkprl:2181
-      - --
-      - /opt/kafka/bin/kafka-server-start.sh
-      - /opt/kafka/config/server.properties
-      - --override
-      - zookeeper.connect=zkprl:2181,zkprf:2181
-      - --override
-      - broker.id=1
-  kafka-member-2:
-    container_name: kfkm2
-    hostname: kfkm2
-    image: p4km9y/kafka
-    depends_on:
-      - zookeeper-leader
-    entrypoint:
-      - /wait-for-it.sh
-      - -t
-      - "100"
-      - -s
-      - zkprl:2181
-      - --
-      - /opt/kafka/bin/kafka-server-start.sh
-      - /opt/kafka/config/server.properties
-      - --override
-      - zookeeper.connect=zkprl:2181,zkprf:2181
-      - --override
-      - broker.id=2
-  kafka-member-3:
-    container_name: kfkm3
-    hostname: kfkm3
-    image: p4km9y/kafka
-    depends_on:
-      - zookeeper-leader
-    entrypoint:
-      - /wait-for-it.sh
-      - -t
-      - "100"
-      - -s
-      - zkprl:2181
-      - --
-      - /opt/kafka/bin/kafka-server-start.sh
-      - /opt/kafka/config/server.properties
-      - --override
-      - zookeeper.connect=zkprl:2181,zkprf:2181
-      - --override
-      - broker.id=3
+  kafka:
+    image: p4km9y/kafka:0.10.2.0
+    environment:
+      - ZOOKEEPER_CONNECT=zk-leader:2181,zk-p1:2181,zk-p2:2181
+    volumes: # beware of multiple replicas on the same node
+      - kafka-data:/opt/kafka/data
+    deploy:
+      mode: global
+      update_config:
+        delay: 20s
 
-  mosquitto:
-    image: p4km9y/mosquitto
-    hostname: mosquitto
-    ports:
-      - "1883:1883"
-
-  bridge:
-    image: p4km9y/karaf
-    hostname: bridge
-    depends_on: 
-      - kafka-member-1
-      - kafka-member-2
-      - kafka-member-3
-      - mosquitto
-    
+networks:
+  default:
+      external:
+         name: iot
