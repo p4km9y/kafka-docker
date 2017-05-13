@@ -29,7 +29,7 @@ EXPOSE 9092
 
 CMD /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties \
     --override log.dirs=/opt/kafka/data \
-    --delete.topic.enable=true \
+    --override delete.topic.enable=true \
     --override log.retention.hours=$LOG_RETENTION_HOURS \
     --override advertised.host.name=`ip -4 addr show scope global dev eth0 | grep inet | awk '{print \$2}' | cut -d / -f 1 | head -1` \
     --override zookeeper.connect=$ZOOKEEPER_CONNECT \
