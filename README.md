@@ -1,4 +1,5 @@
 ## see makefile
+
 ## simple docker setup
 ```bash
 # zookeeper named z1
@@ -9,7 +10,7 @@ docker run --name k2 -e "ZOOKEEPER_CONNECT=172.17.0.2:2181" p4km9y/kafka
 
 ## compose
 ```bash
-docker-compose -p iot zookaf
+docker-compose -p zk zookaf
 ```
 
 ## swarm

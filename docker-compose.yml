@@ -3,59 +3,54 @@ version: "3"
 volumes:
   zk-leader-data:
   zk-leader-cfg:
-  zk-p1-data:
-  zk-p1-cfg:
-  zk-p2-data:
-  zk-p2-cfg:
+  zk-follower-alpha-data:
+  zk-follower-alpha-cfg:
+  zk-follower-beta-data:
+  zk-follower-beta-cfg:
   kafka-data:
 
 services:
   zk-leader:
-    image: p4km9y/zookeeper:3.5.3-beta
+    image: p4km9y/zookeeper
     volumes:
       - zk-leader-data:/opt/zookeeper/data
       - zk-leader-cfg:/opt/zookeeper/conf
-    deploy:
-      placement:
-        constraints:
-          - node.labels.camp.xit.docker.node.number == 1
-  zk-p1:
-    image: p4km9y/zookeeper:3.5.3-beta
+#    deploy:
+#      placement:
+#        constraints:
+#          - node.labels.javot.node.id == alpha
+  zk-follower-alpha:
+    image: p4km9y/zookeeper
     environment:
       - ZK_LEADER=zk-leader
       - ZK_SLEEP=10
     volumes:
-      - zk-p1-data:/opt/zookeeper/data
-      - zk-p1-cfg:/opt/zookeeper/conf
-    deploy:
-      placement:
-        constraints:
-          - node.labels.camp.xit.docker.node.number == 2
-  zk-p2:
-    image: p4km9y/zookeeper:3.5.3-beta
+      - zk-follower-alpha-data:/opt/zookeeper/data
+      - zk-follower-alpha-cfg:/opt/zookeeper/conf
+#    deploy:
+#      placement:
+#        constraints:
+#          - node.labels.javot.node.id == beta
+  zk-follower-beta:
+    image: p4km9y/zookeeper
     environment:
       - ZK_LEADER=zk-leader
       - ZK_SLEEP=30
     volumes:
-      - zk-p2-data:/opt/zookeeper/data
-      - zk-p2-cfg:/opt/zookeeper/conf
-    deploy:
-      placement:
-        constraints:
-          - node.labels.camp.xit.docker.node.number == 2
+      - zk-follower-beta-data:/opt/zookeeper/data
+      - zk-follower-beta-cfg:/opt/zookeeper/conf
+#    deploy:
+#      placement:
+#        constraints:
+#          - node.labels.javot.node.id == gamma
 
   kafka:
-    image: p4km9y/kafka:0.10.2.0
+    image: p4km9y/kafka
     environment:
-      - ZOOKEEPER_CONNECT=zk-leader:2181,zk-p1:2181,zk-p2:2181
+      - ZOOKEEPER_CONNECT=zk-leader:2181,zk-follower-alpha:2181,zk-follower-beta:2181
     volumes: # beware of multiple replicas on the same node
       - kafka-data:/opt/kafka/data
     deploy:
       mode: global
       update_config:
         delay: 20s
-
-networks:
-  default:
-      external:
-         name: iot
