@@ -1,3 +1,5 @@
+# config notes
+
 ## see makefile
 
 ## simple docker setup

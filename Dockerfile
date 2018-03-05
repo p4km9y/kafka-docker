@@ -39,4 +39,3 @@ CMD /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties \
     --override advertised.host.name=`ip -4 addr show scope global dev eth0 | grep inet | awk '{print \$2}' | cut -d / -f 1 | head -1` \
     --override zookeeper.connect=$ZOOKEEPER_CONNECT \
     --override broker.id=$KAFKA_BROKER_ID
-
